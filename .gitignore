@@ -1,0 +1,28 @@
+# Large reference and raw data files — do NOT commit these
+data/raw/*.fa
+data/raw/*.fa.gz
+data/raw/*.gtf
+data/raw/star_index/
+data/raw/rRNA_db/
+data/rna_seq/
+data/ribo_seq/
+
+# Results (intermediate and final outputs)
+results/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.eggs/
+*.egg-info/
+
+# Conda / environments
+.conda/
+env/
+
+# Editor / OS
+.DS_Store
+.vscode/
+*.swp
+*.swo

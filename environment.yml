@@ -1,0 +1,29 @@
+name: sorf-tool
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+
+dependencies:
+  # Python
+  - python=3.10
+  - pip
+
+  # Core bioinformatics tools
+  - star=2.7.11a
+  - samtools=1.18
+  - bedtools=2.31.1
+  - subread=2.0.6          # featureCounts
+  - cutadapt=4.6
+  - fastqc=0.12.1
+  - sortmerna=4.3.6
+  - sra-tools=3.0.10       # prefetch + fasterq-dump
+
+  # Python packages
+  - biopython=1.83
+  - pandas=2.1.4
+  - numpy=1.26.4
+  - pyyaml=6.0.1
+
+  - pip:
+    - argparse
