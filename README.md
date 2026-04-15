@@ -1,4 +1,4 @@
-# HiScript Tool
+# HiScript
 
 **Computational discovery and translational validation of small open reading frames (sORFs) and microproteins from multi-omics data.**
 
