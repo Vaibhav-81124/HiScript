@@ -13,7 +13,7 @@
 #    --samples PATH          Sample manifest (default: config/samples.tsv)
 #    --skip_discovery        Use precomputed stage1_novel_sorfs.csv
 #    --start_phase N         Start from phase N (1–5). Default: 1
-#    --end_phase N           Stop after phase N (1–5). Default: 5
+#    --end_phase N           Stop after phase N (1–6). Default: 5 (6 = RF scoring)
 # =============================================================================
 
 set -euo pipefail
@@ -24,7 +24,7 @@ CONFIG="config/config.yaml"
 SAMPLES="config/samples.tsv"
 SKIP_DISC=""
 START_PHASE=1
-END_PHASE=5
+END_PHASE=6
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -62,6 +62,7 @@ run_phase 2 phase2_rnaseq/run_phase2.sh
 run_phase 3 phase3_riboseq/run_phase3.sh
 run_phase 4 phase4_translation/run_phase4.sh
 run_phase 5 phase5_TE/run_phase5.sh
+run_phase 6 phase6_scoring/run_phase6.sh
 
 echo ""
 echo "╔══════════════════════════════════════════════════════════╗"
