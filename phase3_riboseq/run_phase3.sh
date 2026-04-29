@@ -171,27 +171,33 @@ while IFS=$'\t' read -r sample_name cell_type data_type layout replicate srr fas
     fi
 
     # ── Step 5: P-site assignment ─────────────────────────────────────────────
-    if [ ! -f "${PSITE_BED}" ]; then
-        echo "  P-site assignment..."
-        samtools view "${RPF_BAM}" | \
-        awk 'BEGIN{OFS="\t"}
-        {
-            chrom   = $3
-            start   = $4 - 1
-            strand  = and($2, 16) ? "-" : "+"
-            readlen = length($10)
-            if      (readlen == 28 || readlen == 29) offset = 12
-            else if (readlen == 30 || readlen == 31) offset = 13
-            else                                     offset = 12
-            if (strand == "+")
-                psite = start + offset
-            else
-                psite = start + readlen - offset - 1
-            print chrom, psite, psite+1, ".", ".", strand
-        }' > "${PSITE_BED}"
-        echo "  ✓ P-sites written: ${PSITE_BED}"
+    # Step 5a: Empirical P-site calibration
+    OFFSETS_JSON="${PHASE3}/04_psites/${sample_name}_psite_offsets.json"
+
+    if [ ! -f "${OFFSETS_JSON}" ]; then
+        echo "  Calibrating P-site offsets empirically..."
+        python3 scripts/psite_calibration.py \
+            --bam      "${RPF_BAM}" \
+            --gtf      "${GTF}" \
+            --sample   "${sample_name}" \
+            --rpf_min  "${RPF_MIN}" \
+            --rpf_max  "${RPF_MAX}" \
+            --outdir   "${PHASE3}/04_psites"
+        echo "  Offsets calibrated: ${OFFSETS_JSON}"
     fi
 
+    # Step 5b: P-site assignment using calibrated offsets
+    if [ ! -f "${PSITE_BED}" ]; then
+        echo "  Assigning P-sites..."
+        python3 scripts/psite_assignment.py \
+            --bam      "${RPF_BAM}" \
+            --offsets  "${OFFSETS_JSON}" \
+            --sample   "${sample_name}" \
+            --rpf_min  "${RPF_MIN}" \
+            --rpf_max  "${RPF_MAX}" \
+            --outdir   "${PHASE3}/04_psites"
+        echo "  P-sites written: ${PSITE_BED}"
+    fi
 done < "${SAMPLES}"
 
 echo ""

@@ -1,0 +1,5 @@
+sample_name	cell_type	data_type	layout	replicate	srr	fastq_r1	fastq_r2
+HeLa_M_RNA_rep1	HeLa_M	rna	single	rep1	SRR3306577		
+HeLa_M_RNA_rep2	HeLa_M	rna	single	rep2	SRR3306578		
+HeLa_M_RIBO_rep1	HeLa_M	ribo	single	rep1	SRR3306585		
+HeLa_M_RIBO_rep2	HeLa_M	ribo	single	rep2	SRR3306586		

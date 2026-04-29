@@ -12,7 +12,35 @@
 #    fastq_r2      : path to local R2 FASTQ (paired-end only; blank otherwise)
 # ============================================================
 sample_name	cell_type	data_type	layout	replicate	srr	fastq_r1	fastq_r2
-HeLa_M_RNA_rep1	HeLa_M	rna	single	rep1	SRR3306577		
-HeLa_M_RNA_rep2	HeLa_M	rna	single	rep2	SRR3306578		
-HeLa_M_RIBO_rep1	HeLa_M	ribo	single	rep1	SRR3306585		
-HeLa_M_RIBO_rep2	HeLa_M	ribo	single	rep2	SRR3306586		
+# ─── HOW TO FILL THIS FILE ────────────────────────────────────────────────────
+# sample_name : unique ID used for all output filenames. No spaces.
+#               e.g. HeLa_M_RNA_rep1
+#
+# cell_type   : biological condition or cell line. Samples sharing a cell_type
+#               are treated as replicates of the same condition.
+#               e.g. HeLa_M
+#
+# data_type   : rna   → RNA-seq sample
+#               ribo  → Ribo-seq sample
+#
+# layout      : single → single-end sequencing
+#               paired → paired-end sequencing
+#
+# replicate   : rep1 | rep2 | rep3 ...
+#               Each cell_type must have at least rep1 and rep2 for both
+#               rna and ribo data types.
+#
+# srr         : SRA accession number (e.g. SRR3306577). The pipeline will
+#               auto-download using prefetch + fasterq-dump.
+#               Leave blank if providing local FASTQ files.
+#
+# fastq_r1    : Path to local R1 FASTQ (leave blank if using srr)
+# fastq_r2    : Path to local R2 FASTQ (paired-end only; leave blank otherwise)
+#
+# ─── DELETE THESE COMMENT LINES AND ADD YOUR SAMPLES BELOW ───────────────────
+# Example rows (uncomment and edit):
+#
+# SAMPLE_RNA_rep1	MY_CELL	rna	single	rep1	SRR0000001		
+# SAMPLE_RNA_rep2	MY_CELL	rna	single	rep2	SRR0000002		
+# SAMPLE_RIBO_rep1	MY_CELL	ribo	single	rep1	SRR0000003		
+# SAMPLE_RIBO_rep2	MY_CELL	ribo	single	rep2	SRR0000004		
