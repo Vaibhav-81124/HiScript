@@ -26,6 +26,3 @@ env/
 .vscode/
 *.swp
 *.swo
--e 
-# Local analysis scripts — not for publication
-local_analysis/

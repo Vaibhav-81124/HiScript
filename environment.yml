@@ -14,7 +14,7 @@ dependencies:
   - samtools=1.18
   - bedtools=2.31.1
   - subread=2.0.6          # featureCounts
-  - cutadapt=4.6
+  - trimmomatic=0.39
   - fastqc=0.12.1
   - sortmerna=4.3.6
   - sra-tools=3.0.10       # prefetch + fasterq-dump
@@ -24,7 +24,6 @@ dependencies:
   - pandas=2.1.4
   - numpy=1.26.4
   - pyyaml=6.0.1
-  - matplotlib=3.8.3
 
   - pip:
     - argparse

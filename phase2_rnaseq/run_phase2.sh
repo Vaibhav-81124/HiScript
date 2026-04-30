@@ -5,10 +5,10 @@
 #  Iterates over all RNA-seq samples in samples.tsv and runs:
 #    1. SRA download (if SRR provided)
 #    2. FastQC (raw)
-#    3. Cutadapt trimming
+#    3. Trimmomatic trimming (SE or PE)
 #    4. FastQC (trimmed)
-#    5. STAR index build (once)
-#    6. STAR alignment → sorted BAM
+#    5. STAR index build (once, shared with Phase 3)
+#    6. STAR alignment -> sorted BAM
 #
 #  Usage:
 #    bash phase2_rnaseq/run_phase2.sh [--config config/config.yaml] [--samples config/samples.tsv]
@@ -50,9 +50,10 @@ THREADS=$(read_cfg threads)
 ADAPTER_SE=$(read_cfg rnaseq.adapter_se)
 ADAPTER_R1=$(read_cfg rnaseq.adapter_r1)
 ADAPTER_R2=$(read_cfg rnaseq.adapter_r2)
-QUAL_CUTOFF=$(read_cfg rnaseq.quality_cutoff)
 MIN_LEN=$(read_cfg rnaseq.min_length)
-OVERHANG_SE=$(read_cfg rnaseq.star_overhang_se)
+LEADING=$(read_cfg rnaseq.trimmomatic_leading)
+TRAILING=$(read_cfg rnaseq.trimmomatic_trailing)
+SLIDING_WINDOW=$(read_cfg rnaseq.trimmomatic_sliding_window)
 OVERHANG_PE=$(read_cfg rnaseq.star_overhang_pe)
 OUTDIR=$(read_cfg output_dir)
 
@@ -66,15 +67,15 @@ mkdir -p "${PHASE2}/01_qc/raw" \
          "${PHASE2}/03_aligned"
 
 echo "============================================================"
-echo "  PHASE 2 — RNA-seq Pipeline"
+echo "  PHASE 2 -- RNA-seq Pipeline (Trimmomatic)"
 echo "  Config  : ${CONFIG}"
 echo "  Samples : ${SAMPLES}"
 echo "  $(date)"
 echo "============================================================"
 
-# ── Build STAR index once ─────────────────────────────────────────────────────
+# -- Build STAR index once ----------------------------------------------------
 if [ ! -d "${STAR_INDEX}" ] || [ -z "$(ls -A ${STAR_INDEX} 2>/dev/null)" ]; then
-    echo "── Building STAR index ──"
+    echo "-- Building STAR index --"
     mkdir -p "${STAR_INDEX}"
     STAR \
         --runMode genomeGenerate \
@@ -84,35 +85,22 @@ if [ ! -d "${STAR_INDEX}" ] || [ -z "$(ls -A ${STAR_INDEX} 2>/dev/null)" ]; then
         --sjdbGTFfile "${GTF}" \
         --sjdbOverhang "${OVERHANG_PE}" \
         --genomeSAindexNbases 14
-    echo "✓ STAR index built"
+    echo "STAR index built"
 else
-    echo "✓ STAR index exists — skipping"
+    echo "STAR index exists -- skipping"
 fi
 
-# ── Process each RNA-seq sample ──────────────────────────────────────────────
-python3 - <<'PYEOF'
-import csv, sys
-samples = []
-with open("${SAMPLES}") as f:
-    for row in csv.DictReader(f, delimiter='\t'):
-        if not row['sample_name'].startswith('#') and row['data_type'] == 'rna':
-            samples.append(row)
-for s in samples:
-    print(s['sample_name'])
-PYEOF
-
-# Re-read in bash
+# -- Process each RNA-seq sample ----------------------------------------------
 while IFS=$'\t' read -r sample_name cell_type data_type layout replicate srr fastq_r1 fastq_r2; do
-    # Skip header and comments
     [[ "${sample_name}" =~ ^#.*$ || "${sample_name}" == "sample_name" ]] && continue
     [[ "${data_type}" != "rna" ]] && continue
 
     echo ""
-    echo "────────────────────────────────────────────────────────"
+    echo "------------------------------------------------------------"
     echo "  Sample: ${sample_name}  (${layout})"
-    echo "────────────────────────────────────────────────────────"
+    echo "------------------------------------------------------------"
 
-    # ── Download if SRR provided ─────────────────────────────────────────────
+    # -- Download if SRR provided ---------------------------------------------
     if [ -n "${srr}" ]; then
         if [ "${layout}" == "single" ]; then
             FQ="${RNA_DATA}/${srr}.fastq.gz"
@@ -145,7 +133,7 @@ while IFS=$'\t' read -r sample_name cell_type data_type layout replicate srr fas
 
     SORTED_BAM="${PHASE2}/03_aligned/${sample_name}_sorted.bam"
 
-    # ── FastQC raw ───────────────────────────────────────────────────────────
+    # -- FastQC raw -----------------------------------------------------------
     if [ ! -f "${PHASE2}/01_qc/raw/${sample_name}_fastqc.zip" ]; then
         echo "  FastQC (raw)..."
         fastqc --outdir "${PHASE2}/01_qc/raw" \
@@ -153,46 +141,65 @@ while IFS=$'\t' read -r sample_name cell_type data_type layout replicate srr fas
                "${fastq_r1}" ${fastq_r2:+"${fastq_r2}"}
     fi
 
-    # ── Cutadapt ─────────────────────────────────────────────────────────────
+    # -- Trimmomatic ----------------------------------------------------------
     if [ "${layout}" == "single" ]; then
         TRIMMED="${PHASE2}/02_trimmed/${sample_name}_trimmed.fastq.gz"
+
         if [ ! -f "${TRIMMED}" ]; then
-            echo "  Trimming (single-end)..."
-            cutadapt \
-                -a "${ADAPTER_SE}" \
-                --quality-cutoff "${QUAL_CUTOFF}" \
-                --minimum-length "${MIN_LEN}" \
-                --cores "${THREADS}" \
-                -o "${TRIMMED}" \
+            echo "  Trimmomatic (single-end)..."
+            ADAPTER_FA="${PHASE2}/02_trimmed/${sample_name}_adapter.fa"
+            printf ">adapter\n%s\n" "${ADAPTER_SE}" > "${ADAPTER_FA}"
+
+            trimmomatic SE \
+                -threads "${THREADS}" \
+                -phred33 \
                 "${fastq_r1}" \
-                2>&1 | tee "${PHASE2}/02_trimmed/${sample_name}_cutadapt.log"
+                "${TRIMMED}" \
+                "ILLUMINACLIP:${ADAPTER_FA}:2:30:10" \
+                "LEADING:${LEADING}" \
+                "TRAILING:${TRAILING}" \
+                "SLIDINGWINDOW:${SLIDING_WINDOW}" \
+                "MINLEN:${MIN_LEN}" \
+                2>&1 | tee "${PHASE2}/02_trimmed/${sample_name}_trimmomatic.log"
         fi
         TRIM_INPUT="${TRIMMED}"
+
     else
         TRIMMED_R1="${PHASE2}/02_trimmed/${sample_name}_R1_trimmed.fastq.gz"
         TRIMMED_R2="${PHASE2}/02_trimmed/${sample_name}_R2_trimmed.fastq.gz"
+        UNPAIRED_R1="${PHASE2}/02_trimmed/${sample_name}_R1_unpaired.fastq.gz"
+        UNPAIRED_R2="${PHASE2}/02_trimmed/${sample_name}_R2_unpaired.fastq.gz"
+
         if [ ! -f "${TRIMMED_R1}" ]; then
-            echo "  Trimming (paired-end)..."
-            cutadapt \
-                -a "${ADAPTER_R1}" -A "${ADAPTER_R2}" \
-                --quality-cutoff "${QUAL_CUTOFF}" \
-                --minimum-length "${MIN_LEN}" \
-                --cores "${THREADS}" \
-                -o "${TRIMMED_R1}" -p "${TRIMMED_R2}" \
+            echo "  Trimmomatic (paired-end)..."
+            ADAPTER_FA="${PHASE2}/02_trimmed/${sample_name}_adapters.fa"
+            printf ">PrefixPE/1\n%s\n>PrefixPE/2\n%s\n" \
+                "${ADAPTER_R1}" "${ADAPTER_R2}" > "${ADAPTER_FA}"
+
+            trimmomatic PE \
+                -threads "${THREADS}" \
+                -phred33 \
                 "${fastq_r1}" "${fastq_r2}" \
-                2>&1 | tee "${PHASE2}/02_trimmed/${sample_name}_cutadapt.log"
+                "${TRIMMED_R1}" "${UNPAIRED_R1}" \
+                "${TRIMMED_R2}" "${UNPAIRED_R2}" \
+                "ILLUMINACLIP:${ADAPTER_FA}:2:30:10:8:true" \
+                "LEADING:${LEADING}" \
+                "TRAILING:${TRAILING}" \
+                "SLIDINGWINDOW:${SLIDING_WINDOW}" \
+                "MINLEN:${MIN_LEN}" \
+                2>&1 | tee "${PHASE2}/02_trimmed/${sample_name}_trimmomatic.log"
         fi
         TRIM_INPUT="${TRIMMED_R1} ${TRIMMED_R2}"
     fi
 
-    # ── FastQC trimmed ───────────────────────────────────────────────────────
+    # -- FastQC trimmed -------------------------------------------------------
     if [ ! -f "${PHASE2}/01_qc/trimmed/${sample_name}_trimmed_fastqc.zip" ]; then
         echo "  FastQC (trimmed)..."
         fastqc --outdir "${PHASE2}/01_qc/trimmed" \
                --threads "${THREADS}" ${TRIM_INPUT}
     fi
 
-    # ── STAR alignment ───────────────────────────────────────────────────────
+    # -- STAR alignment -------------------------------------------------------
     if [ ! -f "${SORTED_BAM}" ]; then
         echo "  STAR alignment..."
         STAR \
@@ -203,27 +210,21 @@ while IFS=$'\t' read -r sample_name cell_type data_type layout replicate srr fas
             --outSAMtype BAM SortedByCoordinate \
             --outSAMattributes NH HI AS NM MD \
             --outFileNamePrefix "${PHASE2}/03_aligned/${sample_name}_" \
-            --outFilterType BySJout \
-            --outFilterMultimapNmax 20 \
-            --alignSJoverhangMin 8 \
-            --alignSJDBoverhangMin 1 \
-            --outFilterMismatchNmax 999 \
-            --outFilterMismatchNoverReadLmax 0.04 \
-            --alignIntronMin 20 \
+            --outFilterMismatchNmax 2 \
             --alignIntronMax 1000000 \
             --alignMatesGapMax 1000000
 
         mv "${PHASE2}/03_aligned/${sample_name}_Aligned.sortedByCoord.out.bam" \
            "${SORTED_BAM}"
         samtools index "${SORTED_BAM}"
-        echo "  ✓ BAM: ${SORTED_BAM}"
+        echo "  BAM: ${SORTED_BAM}"
     else
-        echo "  ✓ BAM exists — skipping alignment"
+        echo "  BAM exists -- skipping alignment"
     fi
 
 done < "${SAMPLES}"
 
 echo ""
 echo "============================================================"
-echo "  PHASE 2 COMPLETE — $(date)"
+echo "  PHASE 2 COMPLETE -- $(date)"
 echo "============================================================"
