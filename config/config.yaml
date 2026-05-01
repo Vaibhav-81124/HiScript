@@ -5,11 +5,11 @@
 
 # ── Reference files (place these in data/raw/) ──────────────
 reference:
-  genome_fasta:  "data/raw/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
-  cdna_fasta:    "data/raw/Homo_sapiens.GRCh38.cdna.all.fa"
-  gtf:           "data/raw/Homo_sapiens.GRCh38.115.gtf"
-  star_index:    "data/raw/star_index"
-  rrna_db:       "data/raw/rRNA_db"
+  genome_fasta: "data/raw/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
+  cdna_fasta: "data/raw/Homo_sapiens.GRCh38.cdna.all.fa"
+  gtf: "data/raw/Homo_sapiens.GRCh38.115.gtf"
+  star_index: "data/raw/star_index"
+  rrna_db: "data/raw/rRNA_db"
 
 # ── Output root ──────────────────────────────────────────────
 output_dir: "results"
@@ -25,28 +25,31 @@ discovery:
 
 # ── Phase 2: RNA-seq ─────────────────────────────────────────
 rnaseq:
-  adapter_se:  "AGATCGGAAGAGCACACGTCTGAAC"
-  adapter_r1:  "AGATCGGAAGAGCACACGTCTGAAC"
-  adapter_r2:  "AGATCGGAAGAGCGTCGTGTAGGGA"
-  quality_cutoff: 20
-  min_length: 30
-  star_overhang_se: 50       # sjdbOverhang for single-end (read_len - 1)
-  star_overhang_pe: 99       # sjdbOverhang for paired-end
+  adapter_se: "AGATCGGAAGAGCACACGTCTGAAC"
+  adapter_r1: "AGATCGGAAGAGCACACGTCTGAAC"
+  adapter_r2: "AGATCGGAAGAGCGTCGTGTAGGGA"
+  min_length: 25
+  star_overhang_se: 50
+  star_overhang_pe: 99
+  trimmomatic_leading: 3
+  trimmomatic_trailing: 3
+  trimmomatic_sliding_window: "4:15"
 
 # ── Phase 3: Ribo-seq ────────────────────────────────────────
 riboseq:
-  adapter:    "TGGAATTCTCGGGTGCCAAGG"
-  rpf_min:    26
-  rpf_max:    34
-  quality_cutoff: 20
+  adapter: "TGGAATTCTCGGGTGCCAAGG"
+  rpf_min: 26
+  rpf_max: 34
+  trimmomatic_leading: 3
+  trimmomatic_trailing: 3
 
 # ── Phase 4: Translation ─────────────────────────────────────
 translation:
   min_ribo_reads: 10
-  micro_max_aa:   60
+  micro_max_aa: 60
   min_psite_reads: 8
   frame0_threshold: 0.55
 
 # ── Phase 5: Translation Efficiency ─────────────────────────
 te:
-  pseudocount: 1             # added to RNA count to avoid div/0
+  pseudocount: 1 # added to RNA count to avoid div/0
