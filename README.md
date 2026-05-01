@@ -1,4 +1,4 @@
-# HiScript
+# RiboWin
 
 **Computational discovery and translational validation of small open reading frames (sORFs) and microproteins from multi-omics Ribo-seq and RNA-seq data.**
 
@@ -257,4 +257,4 @@ HiScript/
 
 ## Contact
 
-[Your name] | [Institution] | [GitHub Issues](https://github.com/Vaibhav-81124/HiScript/issues)
+[Your name] | [Institution] | [GitHub Issues](https://github.com/Vaibhav-81124/RiboWin/issues)
