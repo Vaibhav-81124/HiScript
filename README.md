@@ -6,7 +6,7 @@
 
 ## Overview
 
-HiScript is a modular, reproducible pipeline that integrates transcriptome-wide sORF scanning with ribosome profiling (Ribo-seq) and RNA-seq to identify and validate translated microproteins. It was developed and benchmarked on human cell lines (HeLa, keratinocyte, fibroblast) aligned to GRCh38.
+RiboWin is a modular, reproducible pipeline that integrates transcriptome-wide sORF scanning with ribosome profiling (Ribo-seq) and RNA-seq to identify and validate translated microproteins. It was developed and benchmarked on human cell lines (HeLa, keratinocyte, fibroblast) aligned to GRCh38.
 
 ```
 Phase 1 → sORF Discovery           scan transcriptome for candidate ORFs
@@ -37,10 +37,10 @@ Key features:
 ## Installation
 
 ```bash
-git clone https://github.com/Vaibhav-81124/HiScript.git
-cd HiScript
+git clone https://github.com/Vaibhav-81124/RiboWin.git
+cd RiboWin
 conda env create -f environment.yml
-conda activate sorf-tool
+conda activate ribowin
 ```
 
 ---
@@ -84,7 +84,7 @@ If you use different paths, update `config/config.yaml` accordingly.
 
 Before running on your own data, validate the pipeline using our precomputed HeLa asynchronous dataset.
 
-**Step 1 — Download precomputed Phase 1 output from [Releases](https://github.com/Vaibhav-81124/HiScript/releases):**
+**Step 1 — Download precomputed Phase 1 output from [Releases](https://github.com/Vaibhav-81124/RiboWin/releases):**
 ```bash
 mkdir -p results/phase1
 # Download stage1_cleaned_sorfs.csv from the Releases page
@@ -96,9 +96,9 @@ mkdir -p results/phase1
 bash test/run_test.sh
 ```
 
-This automatically downloads HeLa async Ribo-seq and RNA-seq data from SRA (SRR3306581/82/88/89), runs Phases 2–5, and validates the output. Expected result: **12 concordant sORFs including RPL26P19**.
+This automatically downloads HeLa async Ribo-seq and RNA-seq data from SRA (SRR3306581/82/88/89), runs Phases 2-5, and validates the output. Expected result: **12 concordant sORFs including RPL26P19**.
 
-See `test/README_test.md` for full details and expected runtime (~2–4 hours).
+See `test/README_test.md` for full details and expected runtime (~2-4 hours).
 
 ---
 
@@ -109,11 +109,11 @@ See `test/README_test.md` for full details and expected runtime (~2–4 hours).
 Edit `config/samples.tsv` with your sample information:
 
 ```
-sample_name          cell_type   data_type  layout  replicate  srr         fastq_r1  fastq_r2
-MY_RNA_rep1          MY_CELL     rna        single  rep1       SRR0000001
-MY_RNA_rep2          MY_CELL     rna        single  rep2       SRR0000002
-MY_RIBO_rep1         MY_CELL     ribo       single  rep1       SRR0000003
-MY_RIBO_rep2         MY_CELL     ribo       single  rep2       SRR0000004
+sample_name     cell_type   data_type  layout  replicate  srr
+MY_RNA_rep1     MY_CELL     rna        single  rep1       SRR0000001
+MY_RNA_rep2     MY_CELL     rna        single  rep2       SRR0000002
+MY_RIBO_rep1    MY_CELL     ribo       single  rep1       SRR0000003
+MY_RIBO_rep2    MY_CELL     ribo       single  rep2       SRR0000004
 ```
 
 - `srr`: SRA accession — pipeline downloads automatically via `prefetch` + `fasterq-dump`
@@ -150,7 +150,7 @@ Then run:
 bash run_all.sh --skip_discovery
 ```
 
-To run Phase 1 from scratch (not recommended unless you are using a non-human genome or different parameters):
+To run Phase 1 from scratch (only needed if using a non-human genome or different parameters):
 ```bash
 bash run_all.sh
 ```
@@ -188,7 +188,7 @@ bash phase5_TE/run_phase5.sh
 bash run_all.sh --config my_config.yaml --samples my_samples.tsv
 ```
 
-All phases are idempotent — if an output file already exists, the step is skipped. Safe to re-run after a crash.
+All phases are idempotent — if an output file already exists the step is skipped. Safe to re-run after a crash.
 
 ---
 
@@ -210,7 +210,7 @@ All phases are idempotent — if an output file already exists, the step is skip
 ## Repository Structure
 
 ```
-HiScript/
+RiboWin/
 ├── config/
 │   ├── config.yaml             # All parameters — edit this
 │   └── samples.tsv             # Sample manifest — edit this
@@ -229,8 +229,8 @@ HiScript/
 ├── scripts/
 │   ├── sorf_discovery.py       # Phase 1a: scan transcriptome for sORFs
 │   ├── sorf_cleaning.py        # Phase 1b: deduplicate and filter
-│   ├── make_bed.py             # sORF CSV → genomic BED
-│   ├── make_cds_bed.py         # GTF → CDS BED
+│   ├── make_bed.py             # sORF CSV to genomic BED
+│   ├── make_cds_bed.py         # GTF to CDS BED
 │   ├── psite_calibration.py    # Empirical P-site offset calibration
 │   ├── psite_assignment.py     # P-site assignment using calibrated offsets
 │   ├── stage4_translation.py   # Ribo count merge + CDS overlap removal

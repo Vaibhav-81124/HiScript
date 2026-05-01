@@ -1,4 +1,4 @@
-name: sorf-tool
+name: ribowin
 channels:
   - bioconda
   - conda-forge
