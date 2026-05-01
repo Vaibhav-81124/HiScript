@@ -198,7 +198,12 @@ while IFS=$'\t' read -r sample_name cell_type data_type layout replicate srr fas
         echo "  RPF BAM written"
     fi
 
+<<<<<<< HEAD
     # -- Step 5a: Empirical P-site calibration --------------------------------
+=======
+    # ── Step 5: P-site assignment ─────────────────────────────────────────────
+    # Step 5a: Empirical P-site calibration
+>>>>>>> b38740268b6318bad29af99828006001b49a86d7
     OFFSETS_JSON="${PHASE3}/04_psites/${sample_name}_psite_offsets.json"
 
     if [ ! -f "${OFFSETS_JSON}" ]; then
@@ -210,6 +215,7 @@ while IFS=$'\t' read -r sample_name cell_type data_type layout replicate srr fas
             --rpf_min  "${RPF_MIN}" \
             --rpf_max  "${RPF_MAX}" \
             --outdir   "${PHASE3}/04_psites"
+<<<<<<< HEAD
         echo "  Offsets calibrated"
     fi
 
@@ -224,8 +230,23 @@ while IFS=$'\t' read -r sample_name cell_type data_type layout replicate srr fas
             --rpf_max  "${RPF_MAX}" \
             --outdir   "${PHASE3}/04_psites"
         echo "  P-sites written: ${PSITE_BED}"
+=======
+        echo "  Offsets calibrated: ${OFFSETS_JSON}"
+>>>>>>> b38740268b6318bad29af99828006001b49a86d7
     fi
 
+    # Step 5b: P-site assignment using calibrated offsets
+    if [ ! -f "${PSITE_BED}" ]; then
+        echo "  Assigning P-sites..."
+        python3 scripts/psite_assignment.py \
+            --bam      "${RPF_BAM}" \
+            --offsets  "${OFFSETS_JSON}" \
+            --sample   "${sample_name}" \
+            --rpf_min  "${RPF_MIN}" \
+            --rpf_max  "${RPF_MAX}" \
+            --outdir   "${PHASE3}/04_psites"
+        echo "  P-sites written: ${PSITE_BED}"
+    fi
 done < "${SAMPLES}"
 
 echo ""
