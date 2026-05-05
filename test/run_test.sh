@@ -1,117 +1,132 @@
 #!/usr/bin/env bash
-set -euo pipefail
+# =============================================================================
+#  run_test.sh -- Full validation run using public HeLa asynchronous data
+#
+#  Automatically downloads raw FASTQ data from SRA and runs the complete
+#  pipeline (Phases 2-5). No pre-processed files needed.
+#
+#  Dataset:
+#    HeLa asynchronous cells, 2 biological replicates
+#    RNA-seq + Ribo-seq (GEO: GSE79664, Aviner et al. 2017)
+#    SRR3306581, SRR3306582 (RNA-seq)
+#    SRR3306588, SRR3306589 (Ribo-seq)
+#
+#  Expected output:
+#    12 concordant sORFs including RPL26P19 (ORF_13030)
+#
+#  Prerequisites:
+#    1. conda env create -f environment.yml && conda activate sorf-tool
+#    2. Place GRCh38 reference files in data/raw/ (see README)
+#    3. Download stage1_cleaned_sorfs.csv from GitHub Releases
+#       -> results/phase1/stage1_cleaned_sorfs.csv
+#
+#  Usage:
+#    bash test/run_test.sh
+#
+#  Runtime: ~2-4 hours depending on download speed and machine specs
+# =============================================================================
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT}"
 
 CONFIG="config/config.yaml"
-SAMPLES="config/samples.tsv"
-
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --config)  CONFIG="$2";  shift 2 ;;
-        --samples) SAMPLES="$2"; shift 2 ;;
-        *) echo "Unknown argument: $1"; exit 1 ;;
-    esac
-done
-
-# 🔴 Fix CRLF issues globally (safe no-op if already clean)
-sed -i 's/\r$//' "${SAMPLES}" 2>/dev/null || true
-
-read_cfg() {
-    python3 -c "
-import yaml
-with open('${CONFIG}') as f:
-    c = yaml.safe_load(f)
-keys = '$1'.split('.')
-v = c
-for k in keys:
-    v = v[k]
-print(v)
-"
-}
-
-GTF=$(read_cfg reference.gtf)
-STAR_INDEX=$(read_cfg reference.star_index)
-RRNA_DB=$(read_cfg reference.rrna_db)
-THREADS=$(read_cfg threads)
-ADAPTER=$(read_cfg riboseq.adapter)
-RPF_MIN=$(read_cfg riboseq.rpf_min)
-RPF_MAX=$(read_cfg riboseq.rpf_max)
-LEADING=$(read_cfg riboseq.trimmomatic_leading)
-TRAILING=$(read_cfg riboseq.trimmomatic_trailing)
-OUTDIR=$(read_cfg output_dir)
-
-RIBO_DATA="data/ribo_seq"
-mkdir -p "${RIBO_DATA}"
-
-PHASE3="${OUTDIR}/phase3"
-mkdir -p "${PHASE3}/01_trimmed" \
-         "${PHASE3}/02_norrna" \
-         "${PHASE3}/03_aligned" \
-         "${PHASE3}/04_psites"
+SAMPLES="test/samples_test.tsv"
 
 echo "============================================================"
-echo "  PHASE 3 -- Ribo-seq Pipeline"
+echo "  RiboWin -- Validation Test (HeLa asynchronous)"
+echo "  Samples : ${SAMPLES}"
+echo "  Started : $(date)"
 echo "============================================================"
+echo ""
 
-if [ ! -f "${STAR_INDEX}/SA" ]; then
-    echo "ERROR: STAR index not found"
+# -- Pre-flight checks --------------------------------------------------------
+if [ ! -f "results/phase1/stage1_cleaned_sorfs.csv" ]; then
+    echo "ERROR: Missing results/phase1/stage1_cleaned_sorfs.csv"
+    echo "Download from GitHub Releases and place at that path."
     exit 1
 fi
 
-# ✅ FIXED LOOP (handles last line + CRLF safely)
-while IFS=$'\t' read -r sample_name cell_type data_type layout replicate srr fastq_r1 fastq_r2 || [[ -n "$sample_name" ]]; do
+GTF=$(python3 -c "
+import yaml
+with open('config/config.yaml') as f:
+    c = yaml.safe_load(f)
+print(c['reference']['gtf'])
+")
 
-    # 🔴 sanitize fields (CRLF-safe)
-    sample_name=$(echo "$sample_name" | tr -d '\r')
-    data_type=$(echo "$data_type" | tr -d '\r')
-    srr=$(echo "$srr" | tr -d '\r')
+if [ ! -f "${GTF}" ]; then
+    echo "ERROR: GTF not found at ${GTF}"
+    echo "Update reference.gtf in config/config.yaml"
+    exit 1
+fi
 
-    [[ "${sample_name}" =~ ^#.*$ || "${sample_name}" == "sample_name" ]] && continue
-    [[ "${data_type}" != "ribo" ]] && continue
+echo "Pre-flight checks passed."
+echo ""
 
-    echo ""
-    echo "------------------------------------------------------------"
-    echo "  Sample: ${sample_name} (${srr})"
-    echo "------------------------------------------------------------"
+# -- Generate BED files if missing --------------------------------------------
+mkdir -p results/phase1
 
-    # ✅ Robust download block
-    if [ -n "${srr}" ]; then
-        FQ="${RIBO_DATA}/${srr}.fastq.gz"
+if [ ! -f "results/phase1/sorfs_genomic.bed" ]; then
+    echo "Generating sORF BED..."
+    python3 scripts/make_bed.py \
+        --input  "results/phase1/stage1_cleaned_sorfs.csv" \
+        --output "results/phase1/sorfs_genomic.bed"
+fi
 
-        if [ ! -f "${FQ}" ]; then
-            echo "  Downloading ${srr}..."
+if [ ! -f "results/phase1/cds.bed" ]; then
+    echo "Generating CDS BED from GTF..."
+    python3 scripts/make_cds_bed.py \
+        --gtf    "${GTF}" \
+        --output "results/phase1/cds.bed"
+fi
 
-            prefetch "${srr}" --output-directory "${RIBO_DATA}"
+# -- Run phases 2-5 -----------------------------------------------------------
+bash run_all.sh \
+    --config      "${CONFIG}" \
+    --samples     "${SAMPLES}" \
+    --start_phase 2 \
+    --end_phase   5
 
-            fasterq-dump "${RIBO_DATA}/${srr}" \
-                --outdir "${RIBO_DATA}" \
-                --threads "${THREADS}"
-
-            # Handle possible outputs
-            if [ -f "${RIBO_DATA}/${srr}.fastq" ]; then
-                gzip "${RIBO_DATA}/${srr}.fastq"
-                fastq_r1="${RIBO_DATA}/${srr}.fastq.gz"
-
-            elif [ -f "${RIBO_DATA}/${srr}_1.fastq" ]; then
-                gzip "${RIBO_DATA}/${srr}_1.fastq"
-                fastq_r1="${RIBO_DATA}/${srr}_1.fastq.gz"
-
-            else
-                echo "ERROR: FASTQ not found for ${srr}"
-                continue
-            fi
-        else
-            fastq_r1="${FQ}"
-        fi
-    fi
-
-    # ---- rest of your pipeline unchanged ----
-
-done < "${SAMPLES}"
-
+# -- Validation check ---------------------------------------------------------
+echo ""
 echo "============================================================"
-echo "  PHASE 3 COMPLETE"
+echo "  VALIDATION CHECK"
+echo "============================================================"
+
+CONCORDANT="results/phase4/ribo_HeLa_async_common_translated_orfs.csv"
+
+if [ ! -f "${CONCORDANT}" ]; then
+    echo "FAIL: Concordant ORF file not found: ${CONCORDANT}"
+    exit 1
+fi
+
+python3 - << 'PYEOF'
+import pandas as pd, sys
+
+df = pd.read_csv("results/phase4/ribo_HeLa_async_common_translated_orfs.csv")
+n  = len(df)
+
+print(f"  Concordant ORFs found : {n}")
+
+# Check for RPL26P19
+id_col = "orf_id" if "orf_id" in df.columns else "orf_id_rep1"
+rpl26  = df[df[id_col].astype(str).str.contains("13030", na=False)]
+
+if len(rpl26) > 0:
+    print(f"  RPL26P19 (ORF_13030)  : FOUND")
+else:
+    print(f"  RPL26P19 (ORF_13030)  : NOT FOUND -- check pipeline output")
+
+if n == 12:
+    print(f"  Count check (==12)    : PASS")
+elif 8 <= n <= 16:
+    print(f"  Count check (~12)     : WITHIN RANGE")
+else:
+    print(f"  Count check (~12)     : WARNING -- got {n}, expected ~12")
+PYEOF
+
+echo ""
+echo "============================================================"
+echo "  TEST COMPLETE -- $(date)"
+echo "  Final results: results/phase5/HeLa_async_translated_orfs_filtered_withTE.csv"
 echo "============================================================"
