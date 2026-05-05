@@ -111,7 +111,8 @@ def assign_psites(bam, offsets, rpf_min, rpf_max, outdir, sample):
             else:
                 psite = pos + readlen - offset - 1
 
-            fout.write(f"{chrom}\t{psite}\t{psite+1}\t.\t.\t{strand}\n")
+            chrom_out = chrom if chrom.startswith("chr") else f"chr{chrom}"
+            fout.write(f"{chrom_out}\t{psite}\t{psite + 1}\t.\t.\t{strand}\n")
             written += 1
 
     proc.wait()
