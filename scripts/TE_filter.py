@@ -2,12 +2,7 @@
 """
 TE_filter.py — Filter TE table to translated ORFs only; recalculate TE without pseudocount.
 
-Usage:
-    python scripts/TE_filter.py \
-        --te_table   results/phase5/HeLa_M_translation_efficiency.csv \
-        --translated results/phase4/ribo_HeLa_M_common_translated_orfs.csv \
-        --cell       HeLa_M \
-        --outdir     results/phase5
+Now uses genomic_orf_id (stable ID) instead of index-based ORF IDs.
 """
 
 import os
@@ -30,23 +25,43 @@ def main():
     df         = pd.read_csv(args.te_table)
     translated = pd.read_csv(args.translated)
 
-    # Keep only reproducibly translated ORFs
-    df = df[df["orf_id"].isin(translated["orf_id"])]
+    # ── Sanity check ───────────────────────────────────────
+    if "genomic_orf_id" not in df.columns or "genomic_orf_id" not in translated.columns:
+        raise ValueError("Missing genomic_orf_id in input files. Fix upstream pipeline.")
+
+    # ── Keep only reproducibly translated ORFs ─────────────
+    df = df[df["genomic_orf_id"].isin(translated["genomic_orf_id"])]
     print(f"After translation filtering: {len(df):,}")
 
-    # Recalculate TE without pseudocount (NaN where RNA = 0)
-    df["TE_rep1"] = np.where(df["rna_rep1"] > 0,
-                             df["ribo_rep1"] / df["rna_rep1"], np.nan)
-    df["TE_rep2"] = np.where(df["rna_rep2"] > 0,
-                             df["ribo_rep2"] / df["rna_rep2"], np.nan)
-    df["TE_mean"]       = df[["TE_rep1","TE_rep2"]].mean(axis=1, skipna=True)
-    df["TE_valid_reps"] = df[["TE_rep1","TE_rep2"]].notna().sum(axis=1)
+    if len(df) == 0:
+        raise ValueError("No ORFs retained after filtering → ID mismatch or upstream issue.")
 
-    # Sort by ribosome evidence
-    df = df.sort_values(["ribo_rep1","ribo_rep2"], ascending=False)
+    # ── Recalculate TE without pseudocount ─────────────────
+    df["TE_rep1"] = np.where(
+        df["rna_rep1"] > 0,
+        df["ribo_rep1"] / df["rna_rep1"],
+        np.nan
+    )
 
+    df["TE_rep2"] = np.where(
+        df["rna_rep2"] > 0,
+        df["ribo_rep2"] / df["rna_rep2"],
+        np.nan
+    )
+
+    df["TE_mean"] = df[["TE_rep1", "TE_rep2"]].mean(axis=1, skipna=True)
+    df["TE_valid_reps"] = df[["TE_rep1", "TE_rep2"]].notna().sum(axis=1)
+
+    # ── Sort by ribosome evidence ──────────────────────────
+    df = df.sort_values(
+        ["ribo_rep1", "ribo_rep2"],
+        ascending=False
+    )
+
+    # ── Save ───────────────────────────────────────────────
     out = os.path.join(args.outdir, f"{args.cell}_translated_orfs_filtered_withTE.csv")
     df.to_csv(out, index=False)
+
     print(f"Final ORFs retained: {len(df):,}")
     print(f"Saved → {out}")
 
