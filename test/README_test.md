@@ -12,7 +12,7 @@ Only Phases 4 and 5 are run (translation evidence + TE). No alignment needed.
 HeLa asynchronous cells, 2 biological replicates.
 Source: Aviner et al. (2017), *Nature Structural & Molecular Biology*, GSE79664.
 
-Precomputed files hosted on Zenodo: [DOI link here]
+Precomputed files hosted on Zenodo: https://doi.org/10.5281/zenodo.20084600
 
 ---
 
