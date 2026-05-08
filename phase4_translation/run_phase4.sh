@@ -31,6 +31,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+sed -i 's/\r$//' "${SAMPLES}" 2>/dev/null || true
+
 read_cfg() {
     python3 -c "
 import yaml
@@ -121,7 +123,7 @@ for CELL in "${CELL_TYPES[@]}"; do
                 -b "${PSITE_BED}" \
                 -s -c > "${RIBO_SEG}"
 
-            awk '{counts[$4]+=$7} END {for (orf in counts) print orf, counts[orf]}' \
+            awk '{counts[$4]+=$7} END {for (orf in counts) print orf"\t"counts[orf]}' \
                 "${RIBO_SEG}" > "${RIBO_TOT}"
             echo "    ✓ Ribo counts: ${RIBO_TOT}"
         fi
@@ -164,7 +166,7 @@ for CELL in "${CELL_TYPES[@]}"; do
                     -t exon -g gene_id \
                     "${RNA_BAM}"
             fi
-            awk 'NR>1 {print $1"\t"$7}' "${RNA_RAW}" > "${RNA_CLEAN}"
+            awk 'NR>2 {print $1"\t"$7}' "${RNA_RAW}" > "${RNA_CLEAN}"
             echo "    ✓ RNA counts: ${RNA_CLEAN}"
         fi
 

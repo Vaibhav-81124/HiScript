@@ -1,5 +1,5 @@
 sample_name	cell_type	data_type	layout	replicate	srr	fastq_r1	fastq_r2
-HeLa_async_RNA_rep1	HeLa_async	rna	single	rep1	SRR3306581		
-HeLa_async_RNA_rep2	HeLa_async	rna	single	rep2	SRR3306582		
-HeLa_async_RIBO_rep1	HeLa_async	ribo	single	rep1	SRR3306588		
-HeLa_async_RIBO_rep2	HeLa_async	ribo	single	rep2	SRR3306589	
+HeLa_async_RNA_rep1	HeLa_async	rna	single	rep1			
+HeLa_async_RNA_rep2	HeLa_async	rna	single	rep2			
+HeLa_async_RIBO_rep1	HeLa_async	ribo	single	rep1			
+HeLa_async_RIBO_rep2	HeLa_async	ribo	single	rep2			

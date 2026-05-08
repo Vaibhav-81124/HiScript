@@ -1,71 +1,56 @@
 # Test Dataset — HeLa Asynchronous (Validation Run)
 
-Runs the full pipeline on public HeLa asynchronous data and verifies
-the expected output. Raw FASTQ files are downloaded automatically from
-SRA — no manual file preparation needed.
+Validates the pipeline using precomputed HeLa asynchronous data hosted on Zenodo.
+Only Phases 4 and 5 are run (translation evidence + TE). No alignment needed.
 
-**Runtime: ~2-4 hours** (dominated by SRA download + STAR alignment)
+**Runtime: ~10 minutes**
 
 ---
 
 ## Dataset
 
-| Sample | SRR | Type |
-|--------|-----|------|
-| HeLa_async_RNA_rep1 | SRR3306581 | RNA-seq |
-| HeLa_async_RNA_rep2 | SRR3306582 | RNA-seq |
-| HeLa_async_RIBO_rep1 | SRR3306588 | Ribo-seq |
-| HeLa_async_RIBO_rep2 | SRR3306589 | Ribo-seq |
-
+HeLa asynchronous cells, 2 biological replicates.
 Source: Aviner et al. (2017), *Nature Structural & Molecular Biology*, GSE79664.
 
+Precomputed files hosted on Zenodo: [DOI link here]
+
 ---
 
-## Prerequisites
+## Setup
 
-**1. Install environment**
+**Step 1 — Install environment:**
 ```bash
 conda env create -f environment.yml
-conda activate sorf-tool
+conda activate ribowin
 ```
 
-**2. Reference files** — place in `data/raw/`:
+**Step 2 — Download GTF into `data/raw/`:**
 ```bash
-# Genome FASTA
-wget -P data/raw/ https://ftp.ensembl.org/pub/release-109/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
-gunzip data/raw/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
-
-# GTF
-wget -P data/raw/ https://ftp.ensembl.org/pub/release-109/gtf/homo_sapiens/Homo_sapiens.GRCh38.109.gtf.gz
-gunzip data/raw/Homo_sapiens.GRCh38.109.gtf.gz
-
-# SortMeRNA rRNA databases
-wget -P data/raw/rRNA_db/ https://github.com/sortmerna/sortmerna/raw/master/data/rRNA_databases/silva-euk-28s-id98.fasta
-wget -P data/raw/rRNA_db/ https://github.com/sortmerna/sortmerna/raw/master/data/rRNA_databases/silva-euk-18s-id95.fasta
-wget -P data/raw/rRNA_db/ https://github.com/sortmerna/sortmerna/raw/master/data/rRNA_databases/rfam-5s-database-id98.fasta
-wget -P data/raw/rRNA_db/ https://github.com/sortmerna/sortmerna/raw/master/data/rRNA_databases/rfam-5.8s-database-id98.fasta
+wget -P data/raw/ https://ftp.ensembl.org/pub/release-115/gtf/homo_sapiens/Homo_sapiens.GRCh38.115.gtf.gz
+gunzip data/raw/Homo_sapiens.GRCh38.115.gtf.gz
 ```
 
-**3. Precomputed Phase 1 output** — download from [GitHub Releases](../../releases):
+**Step 3 — Download precomputed files from Zenodo:**
+
+Extract the Zenodo archive into the repo root. It will populate:
 ```
-results/phase1/stage1_cleaned_sorfs.csv
+results/
+├── phase1/
+│   └── stage1_cleaned_sorfs.csv
+├── phase2/
+│   └── 03_aligned/
+│       ├── HeLa_async_RNA_rep1_sorted.bam  + .bai
+│       └── HeLa_async_RNA_rep2_sorted.bam  + .bai
+└── phase3/
+    └── 04_psites/
+        ├── HeLa_async_RIBO_rep1_psites.bed
+        └── HeLa_async_RIBO_rep2_psites.bed
 ```
 
----
-
-## Run
-
+**Step 4 — Run:**
 ```bash
 bash test/run_test.sh
 ```
-
-The script will:
-1. Download FASTQs from SRA automatically (SRR3306581/82/88/89)
-2. Run Trimmomatic trimming
-3. Run STAR alignment (RNA-seq and Ribo-seq)
-4. Run rRNA removal (Ribo-seq)
-5. Calibrate P-site offsets empirically
-6. Compute translation evidence and TE
 
 ---
 
@@ -74,7 +59,16 @@ The script will:
 `results/phase4/ribo_HeLa_async_common_translated_orfs.csv`
 
 - **12 concordant sORFs** reproducible across both replicates
-- **RPL26P19 (ORF_13030)** present — pseudogene-derived microprotein
-  candidate reported in the paper
+- **RPL26P19** present on chr5 — pseudogene-derived microprotein candidate
 
 The test script checks both conditions and prints PASS/FAIL automatically.
+
+---
+
+## What the precomputed files contain
+
+| File | Description |
+|------|-------------|
+| `stage1_cleaned_sorfs.csv` | Deduplicated sORF table from GRCh38 transcriptome scan |
+| `*_sorted.bam` | STAR-aligned RNA-seq (Trimmomatic + STAR, GRCh38) |
+| `*_psites.bed` | P-site BED with empirically calibrated offsets (chr-prefixed) |

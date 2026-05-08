@@ -55,8 +55,10 @@ def main():
         frame_counts = [0, 0, 0]
 
         for chrom, start, end in segments:
+            # Normalize to no-chr for consistent comparison with psites
+            chrom_key = str(chrom).replace("chr", "")
             seg = psites[
-                (psites["chr"]    == str(chrom)) &
+                (psites["chr"]    == chrom_key) &
                 (psites["strand"] == strand) &
                 (psites["start"]  >= start) &
                 (psites["start"]  <  end)
