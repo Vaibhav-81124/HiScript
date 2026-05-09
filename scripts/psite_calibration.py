@@ -122,18 +122,18 @@ def get_reads_over_cds(bam: str, cds_df: pd.DataFrame,
     # Sample top n_cds regions (longest = best expressed proxy)
     sample = cds_df.nlargest(n_cds, "length")
 
-    # Detect BAM chromosome naming (chr1 vs 1)
+    # Detect BAM chromosome naming from header
     header = subprocess.run(
         ["samtools", "view", "-H", bam],
         capture_output=True, text=True
     ).stdout
     bam_uses_chr = any("SN:chr" in line for line in header.split("\n"))
-    print(f"  BAM uses chr prefix: {bam_uses_chr}")
+    print(f"  BAM chr prefix detected: {bam_uses_chr}")
 
     reads = []
     for _, row in sample.iterrows():
         chrom = str(row["chrom"])
-        # Normalize chrom to match BAM convention
+        # Normalize to match BAM convention for querying
         if bam_uses_chr and not chrom.startswith("chr"):
             chrom = f"chr{chrom}"
         elif not bam_uses_chr and chrom.startswith("chr"):

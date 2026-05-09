@@ -32,7 +32,7 @@ def main():
             fields = line.strip().split("\t")
             if len(fields) < 9 or fields[2] != "CDS":
                 continue
-            chrom  = fields[0]
+            chrom  = fields[0].replace("chr", "")  # strip chr for consistency
             start  = int(fields[3]) - 1      # GTF is 1-based; BED is 0-based
             end    = int(fields[4])
             strand = fields[6]

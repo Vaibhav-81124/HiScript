@@ -30,9 +30,8 @@ def make_genomic_id(row):
     segments = ast.literal_eval(row["genomic_segments"]) if isinstance(row["genomic_segments"], str) else row["genomic_segments"]
     norm_segments = []
     for c, s, e in segments:
-        chrom = str(c)
-        if not chrom.startswith("chr"):
-            chrom = f"chr{chrom}"
+        # Strip chr prefix - consistent with Ensembl no-chr convention
+        chrom = str(c).replace("chr", "")
         norm_segments.append((chrom, s, e))
 
     seg_str = ";".join([f"{c}:{s}-{e}" for c, s, e in norm_segments])

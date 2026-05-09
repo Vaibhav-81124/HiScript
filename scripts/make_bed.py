@@ -50,12 +50,11 @@ def main():
         if isinstance(segments, str):
             segments = ast.literal_eval(segments)
 
-        # Normalize chromosome naming + build ID segments
+        # Normalize chromosome naming - strip chr prefix for consistency
+        # STAR with Ensembl GTF outputs chroms without chr prefix (1, 2, X etc.)
         norm_segments = []
         for chrom, start, end in segments:
-            chrom_str = str(chrom)
-            if not chrom_str.startswith("chr"):
-                chrom_str = f"chr{chrom_str}"
+            chrom_str = str(chrom).replace("chr", "")
             norm_segments.append((chrom_str, int(start), int(end)))
 
         # Stable genomic ID

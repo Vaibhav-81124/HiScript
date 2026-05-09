@@ -111,7 +111,8 @@ def assign_psites(bam, offsets, rpf_min, rpf_max, outdir, sample):
             else:
                 psite = pos + readlen - offset - 1
 
-            chrom_out = chrom if chrom.startswith("chr") else f"chr{chrom}"
+            # Strip chr prefix - match Ensembl no-chr convention
+            chrom_out = chrom.replace("chr", "")
             fout.write(f"{chrom_out}\t{psite}\t{psite + 1}\t.\t.\t{strand}\n")
             written += 1
 
