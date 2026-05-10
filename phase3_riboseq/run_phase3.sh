@@ -184,8 +184,6 @@ while IFS=$'\t' read -r sample_name cell_type data_type layout replicate srr fas
             --outFilterMultimapNmax 1 \
             --outFilterMismatchNmax 2 \
             --outFilterMatchNmin 20 \
-            --alignIntronMax 1000000 \
-            --alignMatesGapMax 1000000 \
             --limitBAMsortRAM 20000000000
         samtools index "${RAW_BAM}"
         echo "  Aligned"
