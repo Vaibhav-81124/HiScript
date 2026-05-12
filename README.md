@@ -86,12 +86,7 @@ mkdir -p results/phase1
 ```
 or 
 If you wish to run phase 1, download cDNA from the link below
-
-**cDNA FASTA (Phase 1 only):**
-```bash
-wget -P data/raw/ https://ftp.ensembl.org/pub/release-79/fasta/homo_sapiens/cdna/Homo_sapiens.GRCh38.cdna.all.fa.gz
-gunzip data/raw/Homo_sapiens.GRCh38.cdna.all.fa.gz
-```
+[Releases](https://github.com/Vaibhav-81124/RiboWin/releases)
 
 **Step 2 — Run the test:**
 ```bash
