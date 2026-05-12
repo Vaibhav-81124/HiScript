@@ -55,12 +55,6 @@ wget -P data/raw/ https://ftp.ensembl.org/pub/release-115/fasta/homo_sapiens/dna
 gunzip data/raw/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
 ```
 
-**cDNA FASTA (Phase 1 only):**
-```bash
-wget -P data/raw/ https://ftp.ensembl.org/pub/release-79/fasta/homo_sapiens/cdna/Homo_sapiens.GRCh38.cdna.all.fa.gz
-gunzip data/raw/Homo_sapiens.GRCh38.cdna.all.fa.gz
-```
-
 **GTF:**
 ```bash
 wget -P data/raw/ https://ftp.ensembl.org/pub/release-115/gtf/homo_sapiens/Homo_sapiens.GRCh38.115.gtf.gz
@@ -89,6 +83,14 @@ Before running on your own data, validate the pipeline using our precomputed HeL
 mkdir -p results/phase1
 # Download stage1_cleaned_sorfs.csv from the Releases page
 # and place it at: results/phase1/stage1_cleaned_sorfs.csv
+```
+or 
+If you wish to run phase 1, avoid downloading precomputed and download cDNA from the link below
+
+**cDNA FASTA (Phase 1 only):**
+```bash
+wget -P data/raw/ https://ftp.ensembl.org/pub/release-79/fasta/homo_sapiens/cdna/Homo_sapiens.GRCh38.cdna.all.fa.gz
+gunzip data/raw/Homo_sapiens.GRCh38.cdna.all.fa.gz
 ```
 
 **Step 2 — Run the test:**
