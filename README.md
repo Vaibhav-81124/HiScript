@@ -85,7 +85,7 @@ mkdir -p results/phase1
 # and place it at: results/phase1/stage1_cleaned_sorfs.csv
 ```
 or 
-If you wish to run phase 1, avoid downloading precomputed and download cDNA from the link below
+If you wish to run phase 1, download cDNA from the link below
 
 **cDNA FASTA (Phase 1 only):**
 ```bash
