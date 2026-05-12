@@ -57,7 +57,7 @@ gunzip data/raw/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
 
 **cDNA FASTA (Phase 1 only):**
 ```bash
-wget -P data/raw/ https://ftp.ensembl.org/pub/release-115/fasta/homo_sapiens/cdna/Homo_sapiens.GRCh38.cdna.all.fa.gz
+wget -P data/raw/ https://ftp.ensembl.org/pub/release-79/fasta/homo_sapiens/cdna/Homo_sapiens.GRCh38.cdna.all.fa.gz
 gunzip data/raw/Homo_sapiens.GRCh38.cdna.all.fa.gz
 ```
 
