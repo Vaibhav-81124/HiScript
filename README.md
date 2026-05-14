@@ -70,32 +70,36 @@ wget -P data/raw/rRNA_db/ https://github.com/sortmerna/sortmerna/raw/master/data
 wget -P data/raw/rRNA_db/ https://github.com/sortmerna/sortmerna/raw/master/data/rRNA_databases/rfam-5.8s-database-id98.fasta
 ```
 
-If you use different paths, update `config/config.yaml` accordingly.
-
 ---
 
-## Quick Start — Test Run (Recommended First Step)
+## Quick Start — Validation Test
 
-Before running on your own data, validate the pipeline using our precomputed HeLa asynchronous dataset.
+Two tests are provided. Run the quick test first to verify your setup.
 
-**Step 1 — Download precomputed Phase 1 output from [Releases](https://github.com/Vaibhav-81124/RiboWin/releases):**
+### Quick test (~10 minutes)
+Uses precomputed alignment files from Zenodo (DOI: https://doi.org/10.5281/zenodo.20084600).
+Runs Phases 4+5 only. Zenodo data downloads automatically.
+
 ```bash
-mkdir -p results/phase1
-# Download stage1_cleaned_sorfs.csv from the Releases page
-# and place it at: results/phase1/stage1_cleaned_sorfs.csv
+# Only GTF needed — no genome FASTA required for quick test
+bash test/run_test_quick.sh
 ```
 or 
 If you wish to run phase 1, download cDNA from the link below
 [Releases](https://github.com/Vaibhav-81124/RiboWin/releases)
 
-**Step 2 — Run the test:**
+Expected: **12 concordant sORFs including RPL26P19**
+
+### Full pipeline test (~5-6 hours)
+Downloads raw FASTQs from SRA and runs Phases 2-5 from scratch.
+Requires all reference files and precomputed Phase 1 CSV from Releases.
+
 ```bash
-bash test/run_test.sh
+# Download stage1_cleaned_sorfs.csv from Releases -> results/phase1/
+bash test/run_test_full.sh
 ```
 
-This automatically downloads HeLa async Ribo-seq and RNA-seq data from SRA (SRR3306581/82/88/89), runs Phases 2-5, and validates the output. Expected result: **12 concordant sORFs including RPL26P19**.
-
-See `test/README_test.md` for full details and expected runtime (~2-4 hours).
+See `test/README_test.md` for full details on both tests.
 
 ---
 
@@ -116,11 +120,11 @@ MY_RIBO_rep2    MY_CELL     ribo       single  rep2       SRR0000004
 - `srr`: SRA accession — pipeline downloads automatically via `prefetch` + `fasterq-dump`
 - `fastq_r1` / `fastq_r2`: use these instead of `srr` if you have local FASTQ files
 - `layout`: `single` or `paired` — affects Trimmomatic and featureCounts settings
-- Each `cell_type` must have **at least 2 replicates** for both `rna` and `ribo` — concordance across replicates is mandatory
+- Each `cell_type` must have **at least 2 replicates** for both `rna` and `ribo`
 
 ### Step 2 — Edit parameters (optional)
 
-All parameters are in `config/config.yaml`. Defaults work for human GRCh38 data. Key parameters:
+All parameters are in `config/config.yaml`. Defaults work for human GRCh38 data.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -134,11 +138,12 @@ All parameters are in `config/config.yaml`. Defaults work for human GRCh38 data.
 
 ### Step 3 — Get precomputed Phase 1 output
 
-Phase 1 (sORF scanning) requires the full cDNA FASTA and takes several hours. Skip it using our precomputed output:
+Phase 1 (sORF scanning) requires the full cDNA FASTA.
+Download our precomputed output instead:[Releases](https://github.com/Vaibhav-81124/RiboWin/releases)
 
 ```bash
 mkdir -p results/phase1
-# Download stage1_cleaned_sorfs.csv from Releases
+# Download stage1_cleaned_sorfs.csv from GitHub Releases
 # Place at: results/phase1/stage1_cleaned_sorfs.csv
 ```
 
@@ -147,7 +152,7 @@ Then run:
 bash run_all.sh --skip_discovery
 ```
 
-To run Phase 1 from scratch (only needed if using a non-human genome or different parameters):
+To run Phase 1 from scratch (only needed for non-human genomes or custom parameters):
 ```bash
 bash run_all.sh
 ```
@@ -156,22 +161,22 @@ bash run_all.sh
 
 ## Running the Pipeline
 
-**Full pipeline (all phases):**
+**Full pipeline:**
 ```bash
 bash run_all.sh
 ```
 
-**Skip Phase 1 — use precomputed sORF table:**
+**Skip Phase 1 (recommended):**
 ```bash
 bash run_all.sh --skip_discovery
 ```
 
-**Run specific phase range:**
+**Specific phase range:**
 ```bash
 bash run_all.sh --start_phase 2 --end_phase 3
 ```
 
-**Run individual phases:**
+**Individual phases:**
 ```bash
 bash phase1_discovery/run_phase1.sh
 bash phase2_rnaseq/run_phase2.sh
@@ -180,12 +185,32 @@ bash phase4_translation/run_phase4.sh
 bash phase5_TE/run_phase5.sh
 ```
 
-**Use a custom config or sample manifest:**
+All phases are idempotent — if an output file already exists the step is skipped. Safe to re-run after a crash.
+
+---
+
+## Full Reproduction from Raw Data
+
+The complete pipeline can be reproduced from raw SRA accessions:
+
 ```bash
-bash run_all.sh --config my_config.yaml --samples my_samples.tsv
+# Edit config/samples.tsv with your SRR accessions
+bash run_all.sh --skip_discovery
 ```
 
-All phases are idempotent — if an output file already exists the step is skipped. Safe to re-run after a crash.
+**Tested on:** Ubuntu 22.04, 32 cores, 64 GB RAM
+**Runtime:** ~5-6 hours for 2 replicates (RNA-seq + Ribo-seq)
+
+Raw data for the HeLa asynchronous condition used in the paper:
+
+| Sample | SRR | Type |
+|--------|-----|------|
+| HeLa async RNA rep1 | SRR3306581 | RNA-seq |
+| HeLa async RNA rep2 | SRR3306582 | RNA-seq |
+| HeLa async Ribo rep1 | SRR3306588 | Ribo-seq |
+| HeLa async Ribo rep2 | SRR3306589 | Ribo-seq |
+
+GEO accession: GSE79664 (Aviner et al. 2017)
 
 ---
 
@@ -236,22 +261,19 @@ RiboWin/
 │   ├── TE_compute.py           # Translation efficiency calculation
 │   └── TE_filter.py            # Filter TE table to translated ORFs
 ├── test/
-│   ├── samples_test.tsv        # HeLa async test samples (SRR numbers)
-│   ├── run_test.sh             # Test runner
+│   ├── samples_test.tsv        # HeLa async test sample manifest
+│   ├── run_test_quick.sh       # Quick test: Zenodo data, Phases 4+5, ~10 min
+│   ├── run_test_full.sh        # Full test: SRA download, Phases 2-5, ~5-6 hrs
 │   └── README_test.md          # Test instructions and expected output
 ├── run_all.sh                  # Master pipeline runner
-├── environment.yml             # Conda environment (all dependencies)
+├── environment.yml             # Conda environment
 └── README.md
 ```
 
 ---
 
-## Citation
+## Data Availability
 
-> *[Your paper title here]* — [Authors], [Journal], [Year]
+- **Code**: https://github.com/Vaibhav-81124/RiboWin (MIT License)
+- **Precomputed test data**: https://doi.org/10.5281/zenodo.20084600
 
----
-
-## Contact
-
-[Your name] | [Institution] | [GitHub Issues](https://github.com/Vaibhav-81124/RiboWin/issues)
