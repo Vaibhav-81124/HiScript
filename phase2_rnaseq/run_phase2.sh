@@ -84,7 +84,7 @@ if [ ! -d "${STAR_INDEX}" ] || [ -z "$(ls -A ${STAR_INDEX} 2>/dev/null)" ]; then
         --genomeFastaFiles "${GENOME_FA}" \
         --sjdbGTFfile "${GTF}" \
         --sjdbOverhang "${OVERHANG_PE}" \
-        --genomeSAindexNbases 14
+        --genomeSAindexNbases 10
     echo "STAR index built"
 else
     echo "STAR index exists -- skipping"
