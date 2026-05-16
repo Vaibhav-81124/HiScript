@@ -30,18 +30,13 @@ rnaseq:
   adapter_r2: "AGATCGGAAGAGCGTCGTGTAGGGA"
   min_length: 25
   star_overhang_se: 50
-  star_overhang_pe: 99
-  trimmomatic_leading: 3
-  trimmomatic_trailing: 3
-  trimmomatic_sliding_window: "4:15"
+  star_overhang_pe: 50
 
 # ── Phase 3: Ribo-seq ────────────────────────────────────────
 riboseq:
   adapter: "TGGAATTCTCGGGTGCCAAGG"
   rpf_min: 26
   rpf_max: 34
-  trimmomatic_leading: 3
-  trimmomatic_trailing: 3
 
 # ── Phase 4: Translation ─────────────────────────────────────
 translation:
