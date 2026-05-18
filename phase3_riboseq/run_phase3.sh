@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-#  run_phase3.sh -- Ribo-seq processing (manuscript-consistent version)
+#  run_phase3.sh -- Ribo-seq processing 
 #
 #  For each ribo sample in samples.tsv:
 #    1. SRA download (if SRR provided)
@@ -10,8 +10,6 @@
 #    5. RPF length filtering
 #    6. Fixed-offset P-site assignment
 #
-#  NOTE:
-#  This version matches the original local/manuscript workflow.
 # =============================================================================
 
 set -euo pipefail
@@ -272,7 +270,7 @@ while IFS=$'\t' read -r sample_name cell_type data_type layout replicate srr fas
     fi
 
     # =========================================================================
-    # STEP 5: FIXED-OFFSET P-SITE ASSIGNMENT
+    # STEP 5: P-SITE ASSIGNMENT
     # =========================================================================
 
     if [ ! -f "${PSITE_BED}" ]; then
