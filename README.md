@@ -10,8 +10,8 @@ RiboWin is a modular, reproducible pipeline that integrates transcriptome-wide s
 
 ```
 Phase 1 → sORF Discovery           scan transcriptome for candidate ORFs
-Phase 2 → RNA-seq Alignment         Trimmomatic + STAR
-Phase 3 → Ribo-seq Processing       Trimmomatic + SortMeRNA + STAR + P-site calibration
+Phase 2 → RNA-seq Alignment         Cutadapt + STAR
+Phase 3 → Ribo-seq Processing       Cutadapt + SortMeRNA + STAR + P-site calibration
 Phase 4 → Translation Evidence      Ribo counts + periodicity filter + replicate concordance
 Phase 5 → Translation Efficiency    TE calculation per cell type
 ```
