@@ -15,6 +15,7 @@ dependencies:
   - bedtools=2.31.1
   - subread=2.0.6          # featureCounts
   - trimmomatic=0.39
+  - cutadapt=4.4
   - fastqc=0.12.1
   - sortmerna=4.3.6
   - sra-tools=3.0.10       # prefetch + fasterq-dump
