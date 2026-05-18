@@ -119,7 +119,7 @@ MY_RIBO_rep2    MY_CELL     ribo       single  rep2       SRR0000004
 
 - `srr`: SRA accession — pipeline downloads automatically via `prefetch` + `fasterq-dump`
 - `fastq_r1` / `fastq_r2`: use these instead of `srr` if you have local FASTQ files
-- `layout`: `single` or `paired` — affects Trimmomatic and featureCounts settings
+- `layout`: `single` or `paired` — affects Cutadapt and featureCounts settings
 - Each `cell_type` must have **at least 2 replicates** for both `rna` and `ribo`
 
 ### Step 2 — Edit parameters (optional)
